@@ -1,14 +1,21 @@
 # Structure:
 
+## graphs
+
+breadth first search
+
 ## sort
 
-To be implemented...
-
-## graph
-  
-Breadth first search
+bubble sort  
 
 ## data_structures
 
 Binary search tree
 Reb-black tree
+
+## TODO
+
+* configure cmake
+* fill utils.h
+* repair existing code
+
