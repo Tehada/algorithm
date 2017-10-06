@@ -1,0 +1,327 @@
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <list>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+void print(std::unordered_set<size_t>& s) {
+    for (auto elem : s) {
+        std::cout << elem << " ";
+    }
+    std::cout << "\n";
+}
+
+class Graph {
+public:
+    using Vertex = size_t;
+    using VertexSet = std::unordered_set<Vertex>;
+    using VertexList = std::list<Vertex>;
+    using AdjacencyList = std::unordered_map<Vertex, VertexSet>;
+
+    void AddVertex(Vertex v) {
+        adjacency_list_[v];
+    }
+
+    void AddEdge(Vertex u, Vertex v) {
+        adjacency_list_[u].insert(v);
+        adjacency_list_[v].insert(u);
+    }
+
+    const VertexSet& AdjacentVertices(Vertex v) const {
+        const auto it = adjacency_list_.find(v);
+        if (it != adjacency_list_.end()) {
+            return it->second;
+        } else {
+            return empty_set_;
+        }
+    }
+
+    VertexSet AllVertices() const {
+        VertexSet vs;
+        vs.reserve(adjacency_list_.size());
+        for (const auto& pair : adjacency_list_) {
+            const auto& vertex = pair.first;
+            vs.insert(vertex);
+        }
+        return vs;
+    }
+
+    const AdjacencyList& AsAdjacencyList() const {
+        return adjacency_list_;
+    }
+
+private:
+    AdjacencyList adjacency_list_;
+    static const VertexSet empty_set_;
+};
+
+const Graph::VertexSet Graph::empty_set_;
+
+class Path {
+public:
+    explicit Path(const Graph& graph)
+        : graph_(graph), set_complement_(graph.AllVertices()) {
+        auto random_vertex = set_complement_.begin();
+        std::advance(random_vertex, rand() % set_complement_.size());
+        path_.push_back(*random_vertex);
+        set_complement_.erase(*random_vertex);
+    }
+
+    Graph::VertexSet CandidatesToRemove() const {
+        Graph::VertexSet candidates;
+        if (path_.size() == 1) {
+            candidates.insert(path_.front());
+        } else if (!path_.empty()) {
+            candidates.insert(path_.front());
+            candidates.insert(path_.back());
+        }
+        return candidates;
+    }
+
+    const Graph::VertexSet CandidatesToAdd() const {
+        if (path_.empty()) {
+            return set_complement_;
+        }
+        std::unordered_set<size_t> candidates;
+        for (const auto v : set_complement_) {
+            if (AreAdjacent(v, path_.front()) || AreAdjacent(v, path_.back())) {
+                candidates.insert(v);
+                std::cout << v << " " << path_.front() << " " << path_.back() << "\n";
+            }
+        }
+        //print(candidates);
+        return candidates;
+    }
+
+    void Add(Graph::Vertex v) {
+        if (path_.empty()) {
+            path_.push_back(v);
+        } else {
+            if (AreAdjacent(v, path_.front())) {
+                path_.push_front(v);
+            } else {
+                path_.push_back(v);
+            }
+        }
+        set_complement_.erase(v);
+    }
+
+    void Remove(Graph::Vertex v) {
+        if (v == path_.back()) {
+            path_.pop_back();
+        } else {
+            path_.pop_front();
+        }
+        set_complement_.insert(v);
+        //?
+    }
+
+    size_t Cost() const {
+        return path_.size();
+    }
+
+    Graph::VertexSet::const_iterator find(Graph::Vertex v) const {
+        return std::find(path_.begin(), path_.end(), v);
+    }
+
+    Graph::VertexSet::const_iterator begin() const {
+        return path_.begin();
+    }
+
+    Graph::VertexSet::const_iterator end() const {
+        return path_.end();
+    }
+
+    const Graph& GetGraph() const {
+        return graph_;
+    }
+
+    const Graph::VertexList& GetPath() const {
+        return path_;
+    }
+
+private:
+    bool AreAdjacent(Graph::Vertex v, Graph::Vertex u) const {
+        for (const auto w : graph_.AdjacentVertices(v)) {
+            if (w == u) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    const Graph& graph_;
+    Graph::VertexSet set_complement_;
+    Graph::VertexList path_;
+};
+
+void GraphEdges(std::ostream& out, const Graph::AdjacencyList& adjacency_list) {
+    for (const auto& pair : adjacency_list) {
+        const auto& vertex = pair.first;
+        const auto& neighbours = pair.second;
+        for (const auto adj_vertex : neighbours) {
+            out << "\t" << vertex << " -- " << adj_vertex << "\n";
+        }
+    }
+}
+
+// Use http://www.webgraphviz.com to take a look at the graph
+void GraphViz(std::ostream& out, const Graph& graph) {
+    out << "strict graph {\n";
+    for (const auto& pair : graph.AsAdjacencyList()) {
+        const auto& vertex = pair.first;
+        out << "\t" << vertex << "\n";
+    }
+    GraphEdges(out, graph.AsAdjacencyList());
+    out << "}\n";
+}
+
+void GraphViz(std::ostream& out, const Path& vertex_cover) {
+    out << "strict graph {\n";
+    for (const auto& pair : vertex_cover.GetGraph().AsAdjacencyList()) {
+        const auto& vertex = pair.first;
+        if (vertex_cover.find(vertex) != vertex_cover.end()) {
+            out << "\t" << vertex << " [shape=doublecircle]\n";
+        } else {
+            out << "\t" << vertex << "\n";
+        }
+    }
+    GraphEdges(out, vertex_cover.GetGraph().AsAdjacencyList());
+    out << "}\n";
+}
+
+struct DebugInfo {
+    std::vector<size_t> costs;
+};
+
+// Use http://gnuplot.respawned.com/ to plot costs
+std::ostream& operator<<(std::ostream& out, const DebugInfo& debug_info) {
+    for (size_t i = 0; i < debug_info.costs.size(); ++i) {
+        out << i << " " << debug_info.costs[i] << "\n";
+    }
+    return out;
+}
+
+class PathSolver {
+public:
+    virtual Path Solve(const Graph& graph,
+        DebugInfo& debug_info) const = 0;
+    virtual ~PathSolver() = default;
+};
+
+/*
+class GradientDescent final: public PathSolver {
+// TODO: insert implementation
+};
+*/
+
+class Metropolis final : public PathSolver {
+public:
+    Metropolis(double k, double t, bool annealing = false, size_t iterations = 10)
+        : k_(k), t_(t), annealing_(annealing), iterations_(iterations) {
+    }
+
+    Path Solve(const Graph& graph, DebugInfo& debug_info) const {
+        double t = t_;
+        Path path(graph);
+        debug_info.costs.emplace_back(path.Cost());
+        for (size_t _ = 0; _ != iterations_; ++_) {
+            const auto remove_candidates = path.CandidatesToRemove();
+            const auto add_candidates = path.CandidatesToAdd();
+            std::cout << "bug fixed\n";
+            const size_t vertex = rand() % (remove_candidates.size() + add_candidates.size());
+
+            if (vertex == 0 && remove_candidates.size() == 1) {
+                path.Remove(0);
+            } else if (vertex < 2 && double(rand()) / RAND_MAX <= exp(-1. / k_ / t)) {
+                auto random_candidate = remove_candidates.begin();
+                std::advance(random_candidate, rand() % 2);
+                path.Remove(*random_candidate);
+            } else {
+                auto random_candidate = add_candidates.begin();
+                std::advance(random_candidate, rand() % add_candidates.size());
+                path.Add(*random_candidate);
+            }
+            debug_info.costs.emplace_back(path.Cost());
+            if (annealing_) {
+                t /= 2;
+            }
+        }
+        return path;
+    }
+
+private:
+    double k_;
+    double t_;
+    bool annealing_;
+    size_t iterations_;
+};
+
+Graph RandomGraph(size_t size, double edge_probability) {
+    Graph graph;
+    for (Graph::Vertex v = 1; v <= size; ++v) {
+        graph.AddVertex(v);
+    }
+    for (Graph::Vertex v = 1; v <= size; ++v) {
+        for (Graph::Vertex u = v + 1; u <= size; ++u) {
+            if (double(rand()) / RAND_MAX <= edge_probability) {
+                graph.AddEdge(v, u);
+            }
+        }
+    }
+    return graph;
+}
+
+Graph StarGraph(size_t size) {
+    Graph graph;
+    for (Graph::Vertex v = 2; v <= size; ++v) {
+        graph.AddEdge(1, v);
+    }
+    return graph;
+}
+
+int InitRandSeed(int argc, const char* argv[]) {
+    int rand_seed;
+    if (argc >= 2) {
+        rand_seed = atoi(argv[1]);
+    } else {
+        rand_seed = time(nullptr);
+    }
+    srand(rand_seed);
+    return rand_seed;
+}
+
+void TrySolver(const PathSolver& solver, const Graph& graph) {
+    GraphViz(std::cout, graph);
+    auto best_cost = std::numeric_limits<size_t>::max();
+    size_t results = 0;
+    for (int attempt = 1; attempt < 100; ++attempt) {
+        DebugInfo debug_info;
+        const auto path = solver.Solve(graph, debug_info);
+        auto cost = path.Cost();
+        if (cost < best_cost) {
+            best_cost = cost;
+            GraphViz(std::cout, path);
+            std::cout << "Trace info:\n" << debug_info << "\n";
+            ++results;
+        }
+    }
+    std::cout << "Results: " << results << std::endl;
+}
+
+int main(int argc, const char* argv[]) {
+    std::cout << "Using rand seed: " << InitRandSeed(argc, argv) << "\n";
+
+    const auto graph = RandomGraph(7, 0.5);
+    //GradientDescent gradient_descent;
+    Metropolis metropolis(1, 100, true);
+    //TrySolver(gradient_descent, graph);
+    TrySolver(metropolis, graph);
+    return 0;
+}
