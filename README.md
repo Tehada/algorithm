@@ -1,14 +1,14 @@
-# Structure
+# Structure:
 
-## Sortings:
+## sort
 
 To be implemented...
 
-## Graph algprithms:
+## graph
   
 Breadth first search
 
-## Data structures
+## data_structures
 
 Binary search tree
 Reb-black tree
