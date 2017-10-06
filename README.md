@@ -1,6 +1,14 @@
-# Cormen
-Algorithms and programs from book:
+# Structure
 
-  Binary-search tree
-  Reb-black tree
-  Breadth first search
+## Sortings:
+
+To be implemented...
+
+## Graph algprithms:
+  
+Breadth first search
+
+## Data structures
+
+Binary search tree
+Reb-black tree
