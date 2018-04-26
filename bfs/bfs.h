@@ -2,13 +2,14 @@
 #include <queue>
 #include <string>
 
-struct Vertex {
-    std::string color;
-    size_t distance;
-    Vertex parent;
-}
+#include "graph.h"
 
-void BFS(Graph graph, Vertex start) {
+
+// 1 -- checks connectivity of s
+// 2 -- finds shortest paths
+
+
+void bfs(Graph graph, Vertex start) {
     for (auto vertex : graph.AllVertices()) {
         if (vertex != start) {
             vertex.color = "white";
@@ -32,5 +33,15 @@ void BFS(Graph graph, Vertex start) {
             }
         }
         vertex.color = "black";
+    }
+}
+
+
+void bfs2(Node s) {
+    std::queue<T> q;
+    q.push(s);
+    while (!q.empty()) {
+        auto x = q.top();
+        q.pop();
     }
 }

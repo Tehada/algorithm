@@ -4,3 +4,10 @@ void BubbleSort(std::vector<int>& v) {
             std::swap(v[i], v[i - 1]);
     }
 }
+
+
+// add modification, using bin_search when size of one vector is too small
+// use GallopingBinarySearch here 
+void Merge(std::vector<int> a, std::vector<int> b) {
+
+}
