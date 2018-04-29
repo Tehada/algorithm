@@ -5,6 +5,7 @@ void BinarySearch(std::vector<int> v, int value) {
     size_t left = 0, right = v.size();
     size_t mid = (right - left) / 2;
 }
+// check good impl in cppref.com
 
 // find minimal i, s.t. x[i] >= x
 void LowerBound(std::vector<int> v, int x) {}
