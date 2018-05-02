@@ -1,8 +1,7 @@
-#include <iostream>
 #include <string>
 #include <vector>
 
-void Encode(std::string& str) {
+void rle(std::string& str) {
     size_t r = 0, w = 0;
     while (r < str.size()) {
         size_t r_anchor = r;
@@ -18,14 +17,4 @@ void Encode(std::string& str) {
         }
     }
     str.resize(w);
-}
-
-int main() {
-    std::vector<std::string> strings = { "aabbbc", "aaaaaabbccccccdfffff", "a", "bccaaa" };
-    std::vector<std::string> strings_copy = strings;
-    for (auto i = 0; i < strings.size(); ++i) {
-        Encode(strings[i]);
-        std::cout << strings_copy[i] << " : " << strings[i] << "\n";
-    }
-    return 0;
 }
