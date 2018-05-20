@@ -2,19 +2,19 @@
 #include <vector>
 
 void rle(std::string& str) {
-    size_t r = 0, w = 0;
-    while (r < str.size()) {
-        size_t r_anchor = r;
-        while (r < str.size() && str[r] == str[r_anchor])
-            ++r;
-        auto diff = r - r_anchor;
-        str[w] = str[r_anchor];
-        ++w;
+    size_t read_ptr = 0, write_ptr = 0;
+    while (read_ptr < str.size()) {
+        size_t read_anchor = read_ptr;
+        while (read_ptr < str.size() && str[read_ptr] == str[read_anchor])
+            ++read_ptr;
+        auto diff = read_ptr - read_anchor;
+        str[write_ptr] = str[read_anchor];
+        ++write_ptr;
         if (diff > 1) {
             auto number = std::to_string(diff);
-            str.replace(w, number.size(), number);
-            w += number.size();
+            str.replace(write_ptr, number.size(), number);
+            write_ptr += number.size();
         }
     }
-    str.resize(w);
+    str.resize(write_ptr);
 }
