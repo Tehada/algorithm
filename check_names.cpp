@@ -18,8 +18,8 @@
 using namespace clang::tooling;
 using namespace llvm;
 
-static llvm::cl::OptionCategory MyToolCategory("my-tool options");
-static cl::opt<std::string> DictionaryPath("dict");
+static llvm::cl::OptionCategory my_tool_category("my-tool options");
+static cl::opt<std::string> dictionary_path("dict");
 
 std::vector<std::string> dictionary;
 
@@ -49,29 +49,29 @@ bool CheckName(const std::string& name, Entity type) {
 
 template<class T>
 typename T::value_type LevenshteinDistance(const T & src, const T & dst) {
-  const typename T::size_type m = src.size();
-  const typename T::size_type n = dst.size();
-  if (m == 0) {
-    return n;
+  const typename T::size_type mSize = src.size();
+  const typename T::size_type nSize = dst.size();
+  if (mSize == 0) {
+    return nSize;
   }
-  if (n == 0) {
-    return m;
+  if (nSize == 0) {
+    return mSize;
   }
 
-  std::vector< std::vector<typename T::value_type> > matrix(m + 1);
+  std::vector< std::vector<typename T::value_type> > matrix(mSize + 1);
 
-  for (typename T::size_type i = 0; i <= m; ++i) {
-    matrix[i].resize(n + 1);
+  for (typename T::size_type i = 0; i <= mSize; ++i) {
+    matrix[i].resize(nSize + 1);
     matrix[i][0] = i;
   }
-  for (typename T::size_type i = 0; i <= n; ++i) {
+  for (typename T::size_type i = 0; i <= nSize; ++i) {
     matrix[0][i] = i;
   }
 
   typename T::value_type above_cell, left_cell, diagonal_cell, cost;
 
-  for (typename T::size_type i = 1; i <= m; ++i) {
-    for(typename T::size_type j = 1; j <= n; ++j) {
+  for (typename T::size_type i = 1; i <= mSize; ++i) {
+    for(typename T::size_type j = 1; j <= nSize; ++j) {
       cost = src[i - 1] == dst[j - 1] ? 0 : 1;
       above_cell = matrix[i - 1][j];
       left_cell = matrix[i][j - 1];
@@ -80,7 +80,7 @@ typename T::value_type LevenshteinDistance(const T & src, const T & dst) {
     }
   }
 
-  return matrix[m][n];
+  return matrix[mSize][nSize];
 }
 
 template<typename Out>
@@ -121,10 +121,10 @@ std::vector<std::string> Split(const std::string &s, Entity type) {
 
 class MyVisitor : public RecursiveASTVisitor<MyVisitor> {
 public:
-    explicit MyVisitor(ASTContext *Context): Context_(Context), ErrorStream_(Errors_) {}
+    explicit MyVisitor(ASTContext *context): context_(context), error_stream_(errors_) {}
 
     bool VisitVarDecl(VarDecl *d) {
-        if (Context_->getSourceManager().isInMainFile(d->getLocStart())) {    
+        if (context_->getSourceManager().isInMainFile(d->getLocStart())) {    
             Entity type = Entity::kVariable;
             if (d->getAccess() == clang::AccessSpecifier::AS_private) {
                 type = Entity::kField;
@@ -138,7 +138,7 @@ public:
     }
 
     bool VisitFieldDecl(FieldDecl *d) {
-        if (Context_->getSourceManager().isInMainFile(d->getLocStart())) {
+        if (context_->getSourceManager().isInMainFile(d->getLocStart())) {
             Entity type = Entity::kField;
             if (d->getAccess() != clang::AccessSpecifier::AS_private) {
                 type = Entity::kVariable;
@@ -152,7 +152,7 @@ public:
     }
 
     bool VisitCXXRecordDecl(CXXRecordDecl *d) {
-        if (Context_->getSourceManager().isInMainFile(d->getLocStart())) {
+        if (context_->getSourceManager().isInMainFile(d->getLocStart())) {
             Entity type = Entity::kType;
             CheckDecl(d, type);
         }
@@ -160,7 +160,7 @@ public:
     }
 
     bool VisitEnumDecl(EnumDecl *d) {
-        if (Context_->getSourceManager().isInMainFile(d->getLocStart())) {
+        if (context_->getSourceManager().isInMainFile(d->getLocStart())) {
             Entity type = Entity::kType;
             CheckDecl(d, type);
         }
@@ -168,7 +168,7 @@ public:
     }
 
     bool VisitFunctionDecl(FunctionDecl *d) {
-        if (Context_->getSourceManager().isInMainFile(d->getLocStart())) {
+        if (context_->getSourceManager().isInMainFile(d->getLocStart())) {
             Entity type = Entity::kFunction;
             CheckDecl(d, type);
         }
@@ -176,7 +176,7 @@ public:
     }
 
     bool VisitTypeAliasDecl(TypeDecl *d) {
-        if (Context_->getSourceManager().isInMainFile(d->getLocStart())) {
+        if (context_->getSourceManager().isInMainFile(d->getLocStart())) {
             Entity type = Entity::kType;
             CheckDecl(d, type);
         }
@@ -184,9 +184,9 @@ public:
     }
 
     bool VisitStmt(Stmt *stmt) { 
-        const SourceManager &SM = Context_->getSourceManager(); 
-        SourceLocation startLoc = stmt->getLocStart(); 
-        if (clang::Lexer::isAtStartOfMacroExpansion(startLoc, SM, Context_->getLangOpts())) { 
+        const SourceManager &source_manager = context_->getSourceManager(); 
+        SourceLocation start_loc = stmt->getLocStart(); 
+        if (clang::Lexer::isAtStartOfMacroExpansion(start_loc, source_manager, context_->getLangOpts())) { 
             //std::cout << "is start of macro expansion" << std::endl;
         } 
         return true; 
@@ -201,33 +201,33 @@ public:
     }
 
     std::string GetErrors() {
-        ErrorStream_.flush();
-        return Errors_;
+        error_stream_.flush();
+        return errors_;
     }
 
     void ResetErrors() {
         bad_names_ = 0;
         mistakes_ = 0;
-        Errors_.clear();
+        errors_.clear();
     }
 
     std::string GetFilename() {
-        return Filename_;
+        return filename_;
     }
 
 private:
-    ASTContext *Context_;
-    std::string Errors_;
-    llvm::raw_string_ostream ErrorStream_;
+    ASTContext *context_;
+    std::string errors_;
+    llvm::raw_string_ostream error_stream_;
     int bad_names_ = 0, mistakes_ = 0;
 
-    std::string Filename_;
+    std::string filename_;
 
     void CheckDecl(NamedDecl* d, Entity type) {
-        if (Filename_.empty()) Filename_ = Context_->getSourceManager().getFilename(d->getLocStart());
-        FullSourceLoc FullLocation = Context_->getFullLoc(d->getLocStart());
+        if (filename_.empty()) filename_ = context_->getSourceManager().getFilename(d->getLocStart());
+        FullSourceLoc full_location = context_->getFullLoc(d->getLocStart());
         if (!CheckName(d->getNameAsString(), type)) {
-            BadName(type, d->getNameAsString(), Context_->getSourceManager().getFilename(d->getLocStart()), FullLocation.getSpellingLineNumber(), ErrorStream_);
+            BadName(type, d->getNameAsString(), context_->getSourceManager().getFilename(d->getLocStart()), full_location.getSpellingLineNumber(), error_stream_);
             ++bad_names_;
         } else if (d->getNameAsString().size() > 3) {
             std::vector<std::string> words = Split(d->getNameAsString(), type);
@@ -247,7 +247,7 @@ private:
                 }
                 if (0 < dist && dist < 4) {
                     //std::cerr << "\t\t\t" << dictionary[index_of_nearest] << " is nearest to " << word << "\n";
-                    Mistake(d->getNameAsString(), word, dictionary[index_of_nearest], Filename_, FullLocation.getSpellingLineNumber(), ErrorStream_);
+                    Mistake(d->getNameAsString(), word, dictionary[index_of_nearest], filename_, full_location.getSpellingLineNumber(), error_stream_);
                     ++mistakes_;
                 }
             }
@@ -257,23 +257,23 @@ private:
 
 class MyConsumer : public clang::ASTConsumer {
 public:
-    explicit MyConsumer(ASTContext *Context) : Visitor_(Context) {}
+    explicit MyConsumer(ASTContext *context) : visitor_(context) {}
 
-    virtual void HandleTranslationUnit(clang::ASTContext &Context) {
-        Visitor_.TraverseDecl(Context.getTranslationUnitDecl());
-        PrintStatistics(Visitor_.GetFilename(), Visitor_.GetBadNames(), Visitor_.GetMistakes());
-        llvm::outs() << Visitor_.GetErrors();
-        Visitor_.ResetErrors();
+    virtual void HandleTranslationUnit(clang::ASTContext &context) {
+        visitor_.TraverseDecl(context.getTranslationUnitDecl());
+        PrintStatistics(visitor_.GetFilename(), visitor_.GetBadNames(), visitor_.GetMistakes());
+        llvm::outs() << visitor_.GetErrors();
+        visitor_.ResetErrors();
     }
 
 private:
-    MyVisitor Visitor_;
+    MyVisitor visitor_;
 };
 
 class MyAction : public clang::ASTFrontendAction {
 public:
-    virtual std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance &Compiler, llvm::StringRef InFile) {
-        return std::unique_ptr<clang::ASTConsumer>(new MyConsumer(&Compiler.getASTContext()));
+    virtual std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance &compiler, llvm::StringRef in_file) {
+        return std::unique_ptr<clang::ASTConsumer>(new MyConsumer(&compiler.getASTContext()));
     }
 };
 
@@ -288,14 +288,14 @@ std::vector<std::string> ReadDictionary(const std::string& path) {
 }
 
 int main(int argc, const char **argv) {
-    CommonOptionsParser OptionsParser(argc, argv, MyToolCategory);
-    if (!DictionaryPath.empty()) {
-        dictionary = ReadDictionary(DictionaryPath);
+    CommonOptionsParser options_parser(argc, argv, my_tool_category);
+    if (!dictionary_path.empty()) {
+        dictionary = ReadDictionary(dictionary_path);
     }
-    //for (const auto& name : OptionsParser.getSourcePathList()) {
+    //for (const auto& name : options_parser.getSourcePathList()) {
     //    std::cerr << "name: " << name << "\n";
     //}
-    ClangTool Tool(OptionsParser.getCompilations(), OptionsParser.getSourcePathList());
-    return Tool.run(newFrontendActionFactory<MyAction>().get());
+    ClangTool tool(options_parser.getCompilations(), options_parser.getSourcePathList());
+    return tool.run(newFrontendActionFactory<MyAction>().get());
 }
 
