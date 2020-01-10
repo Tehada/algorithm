@@ -1,6 +1,15 @@
 #include <iostream>
 #include <vector>
 
+std::ostream &operator<<(std::ostream& os, const std::vector<int>& v) {
+    os << "vector{";
+    for (const auto& elem : v) {
+        os << elem << ", ";
+    }
+    os << "}";
+    return os;
+}
+
 template<class T>
 std::vector<T> ReadVector() {
     size_t size;
